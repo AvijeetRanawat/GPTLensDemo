@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Contract Audit Walkthrough</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="content-side">
+            <section id="introduction">
+                <h1></h1>
+                <h1>Sample Walkthrough</h1>
+                <p>Welcome to our smart contract code analysis walkthrough! In this tutorial, we will demonstrate how our two-stage LLM-powered system can help you ensure the reliability and security of your smart contracts.</p>
+                <p>Our system utilizes LLMs as both auditors and critics, providing a comprehensive analysis of your code. It identifies potential security risks and suggests improvements, maximizing the detection of true vulnerabilities while minimizing false positives.</p>
+                <p>By leveraging the power of LLMs, you can trust that your smart contracts are robust and secure. Our walkthrough will guide you through the process of uploading your smart contract code and analyzing it using our LLM-powered system.</p>
+                <p>Throughout the walkthrough, we will highlight the key features and benefits of our system, showcasing its effectiveness in identifying vulnerabilities and providing actionable insights. Whether you are a beginner or an experienced developer, this tutorial will help you understand the importance of code analysis and how LLMs can enhance the security of your smart contracts.</p>
+            </section>
+            <section id="fileupload">
+                </p>
+                <h1>Upload File</h1>
+                <p>
+                    To get started, please upload your smart contract code by selecting the file using the "Choose File" button below. The file should be in .sol format, similar to the example provided below.
+                </p>
+                <pre><code>
+                    /**
+                    *Submitted for verification at Etherscan.io on 2018-08-11
+                    */
+
+                    pragma solidity ^0.4.24;
+                    
+                    library SafeMath {
+                    function mul(uint a, uint b) internal returns (uint) {
+                        uint c = a * b;
+                        assert(a == 0 || c / a == b);  
+                        return c;
+                    }
+
+                    function div(uint a, uint b) internal returns (uint) {
+                        uint c = a / b;
+                        return c;
+                    }
+
+                    function sub(uint a, uint b) internal returns (uint) {
+                        assert(b <= a);
+                        return a - b;
+                    }
+
+                    function add(uint a, uint b) internal returns (uint) {
+                        uint c = a + b;
+                        assert(c >= a);
+                        return c;
+                    }
+
+                    function assert(bool assertion) internal {
+                        if (!assertion) {
+                        throw;
+                        }
+                    }
+                    }
+
+
+                    contract ERC20Basic {
+                    uint public totalSupply;
+                    function balanceOf(address who) constant returns (uint);
+                    function transfer(address to, uint value);
+                    event Transfer(address indexed from, address indexed to, uint value);
+                    
+                    function allowance(address owner, address spender) constant returns (uint);
+                    function transferFrom(address from, address to, uint value);
+                    function approve(address spender, uint value);
+                    event Approval(address indexed owner, address indexed spender, uint value);
+                    }
+
+
+                    contract BasicToken is ERC20Basic {
+                    using SafeMath for uint;
+                        
+                    address public owner;
+                    
+                    /// This is a switch to control the liquidity
+                    bool public transferable = true;
+                    
+                    mapping(address => uint) balances;
+
+                    //The frozen accounts 
+                    mapping (address => bool) public frozenAccount;
+
+                    modifier onlyPayloadSize(uint size) {
+                        if(msg.data.length < size + 4) {
+                        throw;
+                        }
+                        _;
+                    }
+                    
+                    modifier unFrozenAccount{
+                        require(!frozenAccount[msg.sender]);
+                        _;
+                    }
+                    
+                    modifier onlyOwner {
+                        if (owner == msg.sender) {
+                            _;
+                        } else {
+                            InvalidCaller(msg.sender);
+                            throw;
+                            }
+                    }
+                    
+                    modifier onlyTransferable {
+                        if (transferable) {
+                            _;
+                        } else {
+                            LiquidityAlarm("The liquidity is switched off");
+                            throw;
+                        }
+                    }
+                    
+                    /// Emitted when the target account is frozen
+                    event FrozenFunds(address target, bool frozen);
+                    
+                    /// Emitted when a function is invocated by unauthorized addresses.
+                    event InvalidCaller(address caller);
+
+                    /// Emitted when some UBS coins are burn.
+                    event Burn(address caller, uint value);
+                    
+                    /// Emitted when the ownership is transferred.
+                    event OwnershipTransferred(address indexed from, address indexed to);
+                    
+                    /// Emitted if the account is invalid for transaction.
+                    event InvalidAccount(address indexed addr, bytes msg);
+                    
+                    /// Emitted when the liquity of UBS is switched off
+                    event LiquidityAlarm(bytes msg);
+                    
+                    function transfer(address _to, uint _value) onlyPayloadSize(2 * 32) unFrozenAccount onlyTransferable {
+                        if (frozenAccount[_to]) {
+                            InvalidAccount(_to, "The receiver account is frozen");
+                        } else {
+                            balances[msg.sender] = balances[msg.sender].sub(_value);
+                            balances[_to] = balances[_to].add(_value);
+                            Transfer(msg.sender, _to, _value);
+                        } 
+                    }
+
+                    function balanceOf(address _owner) view returns (uint balance) {
+                        return balances[_owner];
+                    }
+
+                    ///@notice `freeze? Prevent | Allow` `target` from sending & receiving UBS preconditions
+                    ///@param target Address to be frozen
+                    ///@param freeze To freeze the target account or not
+                    function freezeAccount(address target, bool freeze) onlyOwner public {
+                        frozenAccount[target]=freeze;
+                        FrozenFunds(target, freeze);
+                        }
+                    
+                    function accountFrozenStatus(address target) view returns (bool frozen) {
+                        return frozenAccount[target];
+                    }
+                    
+                    function transferOwnership(address newOwner) onlyOwner public {
+                        if (newOwner != address(0)) {
+                            address oldOwner=owner;
+                            owner = newOwner;
+                            OwnershipTransferred(oldOwner, owner);
+                            }
+                    }
+                    
+                    function switchLiquidity (bool _transferable) onlyOwner returns (bool success) {
+                        transferable=_transferable;
+                        return true;
+                    }
+                    
+                    function liquidityStatus () view returns (bool _transferable) {
+                        return transferable;
+                    }
+                    }
+
+
+                    contract StandardToken is BasicToken {
+
+                    mapping (address => mapping (address => uint)) allowed;
+
+                    function transferFrom(address _from, address _to, uint _value) onlyPayloadSize(3 * 32) unFrozenAccount onlyTransferable{
+                        var _allowance = allowed[_from][msg.sender];
+
+                        // Check account _from and _to is not frozen
+                        require(!frozenAccount[_from]&&!frozenAccount[_to]);
+                        
+                        balances[_to] = balances[_to].add(_value);
+                        balances[_from] = balances[_from].sub(_value);
+                        allowed[_from][msg.sender] = _allowance.sub(_value);
+                        Transfer(_from, _to, _value);
+                    }
+
+                    function approve(address _spender, uint _value) unFrozenAccount {
+                        if ((_value != 0) && (allowed[msg.sender][_spender] != 0)) throw;
+
+                        allowed[msg.sender][_spender] = _value;
+                        Approval(msg.sender, _spender, _value);
+                    }
+
+                    function allowance(address _owner, address _spender) view returns (uint remaining) {
+                        return allowed[_owner][_spender];
+                    }
+                    
+                    }
+
+
+                    contract BAFCToken is StandardToken {
+                        string public name = "Business Alliance Financial Circle";
+                        string public symbol = "BAFC";
+                        uint public decimals = 18;
+                        /**
+                        * CONSTRUCTOR, This address will be : 0x...
+                        */
+                        function UBSexToken() {
+                            owner = msg.sender;
+                            totalSupply = 1.9 * 10 ** 26;
+                            balances[owner] = totalSupply;
+                        }
+
+                        function () public payable {
+                            revert();
+                        }
+                    }
+            </code></pre>
+            </section>
+            <section id="audit-stage">
+                <h1>Audit Stage</h1>
+                <p>The smart contract code is first input into the Auditor, which is an automated analysis tool. The Auditor analyzes the code and generates a comprehensive list of potential vulnerabilities based on its analysis.</p>
+                <p>The output from the Auditor is a JSON file that contains detailed information about each identified vulnerability. The JSON file includes the following details for each vulnerability:</p>
+                <ul>
+                    <li><strong>Function Name:</strong> The name of the function where the vulnerability is identified.</li>
+                    <li><strong>Vulnerability:</strong> A description of the vulnerability.</li>
+                    <li><strong>Reason:</strong> An explanation of why the identified code is considered vulnerable.</li>
+                </ul>
+                <p>Here is an example of the JSON output file:</p>
+                <code><pre>
+            {
+                "output_list": [
+                    {
+                        "function_name": "transfer",
+                        "code": "function transfer(address _to, uint _value) onlyPayloadSize(2 * 32) unFrozenAccount onlyTransferable {\n    if (frozenAccount[_to]) {\n        InvalidAccount(_to, \"The receiver account is frozen\");\n    } else {\n        balances[msg.sender] = balances[msg.sender].sub(_value);\n        balances[_to] = balances[_to].add(_value);\n        Transfer(msg.sender, _to, _value);\n    } \n}",
+                        "vulnerability": "Unchecked Transfer",
+                        "reason": "The transfer function does not check if the sender has enough balance to transfer the specified amount. This can lead to a scenario where the sender can transfer more tokens than they actually own, resulting in a supply inflation and potential loss for other token holders."
+                    },
+                    {
+                        "function_name": "approve",
+                        "code": "function approve(address _spender, uint _value) unFrozenAccount {\n    if ((_value != 0) && (allowed[msg.sender][_spender] != 0)) throw;\n\n    allowed[msg.sender][_spender] = _value;\n    Approval(msg.sender, _spender, _value);\n}",
+                        "vulnerability": "Approval Overwrite",
+                        "reason": "The approve function does not handle the case where the spender already has an existing allowance approved by the owner. This can lead to an approval overwrite vulnerability where the spender can set their allowance to any value, potentially bypassing intended restrictions set by the owner."
+                    }
+                ]
+            }
+                </code></pre>
+            </section>
+            <section id="critic">
+                <h1>Critic Stage</h1>
+                <p>After the audit stage, the output is then fed into another LLM agent called the critic. The critic evaluates each identified vulnerability based on predefined criteria such as correctness, severity, and exploitability.</p>
+                <p>The output from the critic stage is a JSON file that provides a detailed analysis of each vulnerability. The JSON file includes the following information for each vulnerability:</p>
+                <ul>
+                    <li><strong>Function Name:</strong> The name of the function where the vulnerability is identified.</li>
+                    <li><strong>Vulnerability:</strong> A description of the vulnerability.</li>
+                    <li><strong>Criticism:</strong> A critic of the vulnerability, including its severity, correctness, and profitability.</li>
+                    <li><strong>Correctness:</strong> A score indicating the correctness of the identified vulnerability.</li>
+                    <li><strong>Severity:</strong> A score indicating the severity of the identified vulnerability.</li>
+                    <li><strong>Profitability:</strong> A score indicating the potential profitability for an attacker exploiting the vulnerability.</li>
+                </ul>
+                <p>Here is an example of the JSON output file:</p>
+                <code><pre>
+            {
+                "output_list": [
+                    {
+                        "function_name": "transfer",
+                        "vulnerability": "Unchecked Transfer",
+                        "criticism": "The reasoning provided is partially correct. The function indeed lacks a check to verify if the sender has enough balance to complete the transfer, which could result in a supply inflation if the sender transfers more tokens than owned. However, the code includes a subtraction operation 'balances[msg.sender].sub(_value)' which implies that an underflow check is present. Therefore, the severity of this vulnerability is reduced, but correctness is still compromised. The profitability is moderate as an attacker could potentially exploit this to inflate the token supply.",
+                        "correctness": 5,
+                        "severity": 4,
+                        "profitability": 6
+                    },
+                    {
+                        "function_name": "approve",
+                        "vulnerability": "Approval Overwrite",
+                        "criticism": "The reasoning for the vulnerability is valid. The approve function does not handle the scenario where the spender already has an existing allowance approved by the owner, allowing the spender to overwrite the approval with any value. This could lead to unintended bypassing of restrictions set by the owner. The correctness of this vulnerability is high as the approval overwrite scenario is clearly present. The severity is moderate as it can lead to unauthorized fund transfers. The profitability is also moderate as an attacker could exploit this to gain access to more tokens than intended.",
+                        "correctness": 8,
+                        "severity": 5,
+                        "profitability": 5
+                    }
+                ]
+            }
+                </code></pre>
+            </section>
+            <section id="conclusion">
+                <h1>Conclusion</h1>
+                <p>This walkthrough has illustrated the flow from the input of smart contract code to the detailed output from the auditor and critic agents. This system leverages the strengths of LLMs to provide a comprehensive and reliable method for detecting vulnerabilities in smart contracts.</p>
+                <p>By using the Auditor, you can identify potential vulnerabilities in your smart contract code. The Auditor analyzes the code and generates a JSON file that contains detailed information about each identified vulnerability. This file includes the function name, vulnerability description, and an explanation of why the code is considered vulnerable.</p>
+                <p>After running the Auditor, you can then use the Critic to evaluate each identified vulnerability based on predefined criteria such as correctness, severity, and exploitability. The Critic generates a JSON file that provides a detailed analysis of each vulnerability, including a critic, scores for correctness, severity, and profitability.</p>
+                <p>With the output files from the Auditor and Critic, you have a comprehensive understanding of the vulnerabilities in your smart contract code. You can use this information to prioritize and address the identified vulnerabilities, ensuring the security and integrity of your smart contract.</p>
+                <p>Remember to regularly audit and critic your smart contract code to stay proactive in identifying and addressing potential vulnerabilities.</p>
+            </section>
+            <section id="citation">
+                <h1>Citation</h1>
+                <p>Sihao Hu, Tiansheng Huang, Fatih İlhan, Selim Furkan Tekin, Ling Liu(2023). Large Language Model-Powered Smart Contract Vulnerability Detection: New Perspectives. arXiv preprint arXiv:2310.01152.</p>
+            </section>
+        </div>
+        <div class="image-side">
+            <img src="intro.gif" alt="Introduction GIF" id="dynamicGif">
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

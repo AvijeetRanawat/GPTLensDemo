@@ -1,0 +1,73 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    color: #333;
+}
+
+.container {
+    width: 100vw;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.content-side {
+    width: 50%;
+    overflow-y: auto;
+    height: 100vh;
+    padding: 20px;
+    scroll-snap-type: y mandatory;
+    background: rgba(245, 245, 245, 0.9);
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.image-side {
+    width: 50%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f4f4f4;
+}
+
+#dynamicGif {
+    max-height: 90%;
+    max-width: 100%;
+    transition: opacity 0.5s ease-in-out;
+}
+
+section {
+    margin-bottom: 40px;
+    scroll-snap-align: start;
+}
+
+h1, p {
+    margin: 0;
+    padding: 10px 0;
+}
+
+/* Add smooth scrolling */
+.content-side {
+    scroll-behavior: smooth;
+}
+
+/* Scrollbar styles */
+.content-side::-webkit-scrollbar {
+    width: 8px;
+}
+
+.content-side::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.content-side::-webkit-scrollbar-thumb {
+    background: #888;
+}
+
+.content-side::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
