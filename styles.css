@@ -6,13 +6,14 @@ body, html {
     height: 100vh;
     display: flex;
     color: #333;
+    background: #e6e7e8; /* Slight background tint for overall aesthetic */
 }
 
 .container {
     width: 100vw;
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: stretch; /* Ensure alignment is to full height */
 }
 
 .content-side {
@@ -21,8 +22,8 @@ body, html {
     height: 100vh;
     padding: 20px;
     scroll-snap-type: y mandatory;
-    background: rgba(245, 245, 245, 0.9);
-    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    background: white; /* Pure white for better readability */
+    box-shadow: 5px 0 15px rgba(0,0,0,0.2); /* Deeper shadow for more depth */
 }
 
 .image-side {
@@ -31,31 +32,36 @@ body, html {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f4f4f4;
+    background-color: #f0f0f0; /* Lighter grey to distinguish from content */
 }
 
 #dynamicGif {
     max-height: 90%;
     max-width: 100%;
     transition: opacity 0.5s ease-in-out;
+    border-radius: 8px; /* Rounded corners for the GIF */
 }
 
 section {
     margin-bottom: 40px;
     scroll-snap-align: start;
+    padding: 20px;
+    background: #ffffff; /* Ensure sections are distinctly visible */
+    border-left: 5px solid #0056b3; /* Blue accent on active section */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Subtle shadow for depth */
 }
 
 h1, p {
     margin: 0;
     padding: 10px 0;
+    font-weight: normal; /* More modern typography */
 }
 
-/* Add smooth scrolling */
+/* Smooth scrolling and scrollbar styles */
 .content-side {
     scroll-behavior: smooth;
 }
 
-/* Scrollbar styles */
 .content-side::-webkit-scrollbar {
     width: 8px;
 }
